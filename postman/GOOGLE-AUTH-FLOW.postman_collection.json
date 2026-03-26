@@ -1,0 +1,363 @@
+{
+	"info": {
+		"_postman_id": "google-auth-flow-001",
+		"name": "Google Auth Flow",
+		"description": "Google OAuth এর complete flow। New user signup, existing user login, এবং edge cases।\n\n⚠️ idToken কিভাবে পাবেন:\n- Firebase SDK / Google Sign-In SDK থেকে frontend এ idToken নিন\n- অথবা Google OAuth Playground থেকে test token নিন: https://developers.google.com/oauthplayground",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Google Sign-In (New User)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"if (pm.response.code === 201) {",
+							"    pm.environment.set('accessToken', response.data.session.accessToken);",
+							"    pm.environment.set('refreshToken', response.data.session.refreshToken);",
+							"    pm.environment.set('userId', response.data.user.id);",
+							"",
+							"    console.log('✅ New Google user created');",
+							"    console.log('User ID:', response.data.user.id);",
+							"    console.log('Name:', response.data.user.firstName, response.data.user.lastName);",
+							"    console.log('Email:', response.data.user.email);",
+							"    console.log('Avatar:', response.data.user.avatar);",
+							"    console.log('isNewUser:', response.data.isNewUser);",
+							"",
+							"    pm.test('New user created with 201', function() {",
+							"        pm.expect(pm.response.code).to.equal(201);",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(response.data.isNewUser).to.be.true;",
+							"    });",
+							"    pm.test('Tokens returned', function() {",
+							"        pm.expect(response.data.session.accessToken).to.exist;",
+							"        pm.expect(response.data.session.refreshToken).to.exist;",
+							"    });",
+							"    pm.test('User data returned', function() {",
+							"        pm.expect(response.data.user.id).to.exist;",
+							"        pm.expect(response.data.user.email).to.exist;",
+							"        pm.expect(response.data.user.authProvider).to.equal('google');",
+							"        pm.expect(response.data.user.isVerified).to.be.true;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"idToken\": \"PASTE_YOUR_GOOGLE_ID_TOKEN_HERE\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/google",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "google"]
+				},
+				"description": "প্রথমবার Google দিয়ে login করলে নতুন account তৈরি হবে। Response এ isNewUser: true আসবে এবং status 201 হবে।\n\n⚠️ idToken: Firebase/Google SDK থেকে পাওয়া real Google ID token দিন।"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Google Sign-In (Existing User)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"if (pm.response.code === 200) {",
+							"    pm.environment.set('accessToken', response.data.session.accessToken);",
+							"    pm.environment.set('refreshToken', response.data.session.refreshToken);",
+							"    pm.environment.set('userId', response.data.user.id);",
+							"",
+							"    console.log('✅ Existing Google user logged in');",
+							"    console.log('isNewUser:', response.data.isNewUser);",
+							"    console.log('authProvider:', response.data.user.authProvider);",
+							"",
+							"    pm.test('Existing user login with 200', function() {",
+							"        pm.expect(pm.response.code).to.equal(200);",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(response.data.isNewUser).to.be.false;",
+							"    });",
+							"    pm.test('Tokens refreshed', function() {",
+							"        pm.expect(response.data.session.accessToken).to.exist;",
+							"        pm.expect(response.data.session.refreshToken).to.exist;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"idToken\": \"PASTE_YOUR_GOOGLE_ID_TOKEN_HERE\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/google",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "google"]
+				},
+				"description": "আগে থেকে account আছে এমন user Google দিয়ে login করলে। Response এ isNewUser: false আসবে এবং status 200 হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Profile After Google Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"if (pm.response.code === 200) {",
+							"    const user = response.data;",
+							"    console.log('✅ Profile fetched after Google login');",
+							"    console.log('Full Name:', user.fullName);",
+							"    console.log('Email:', user.email);",
+							"    console.log('Avatar:', user.avatar);",
+							"    console.log('Auth Provider:', user.authProvider);",
+							"    console.log('isVerified:', user.isVerified);",
+							"",
+							"    pm.test('Profile fetched successfully', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(user.authProvider).to.equal('google');",
+							"        pm.expect(user.isVerified).to.be.true;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Google login এর পর profile check করুন। authProvider: 'google' এবং isVerified: true হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"if (pm.response.code === 200) {",
+							"    pm.environment.set('accessToken', response.data.accessToken);",
+							"    if (response.data.refreshToken) {",
+							"        pm.environment.set('refreshToken', response.data.refreshToken);",
+							"        console.log('✅ Tokens rotated (production mode)');",
+							"    } else {",
+							"        console.log('✅ Access token refreshed');",
+							"    }",
+							"    pm.test('Token refresh successful', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(response.data.accessToken).to.exist;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/refresh-token",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "refresh-token"]
+				},
+				"description": "Google login এর পর access token expire হলে refresh করুন।"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    pm.environment.unset('accessToken');",
+							"    pm.environment.unset('refreshToken');",
+							"    pm.environment.unset('userId');",
+							"    console.log('✅ Logged out - all tokens cleared');",
+							"    pm.test('Logout successful', function() {",
+							"        pm.expect(pm.response.json().success).to.be.true;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/logout",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "logout"]
+				},
+				"description": "Google session logout করুন। Refresh token invalidate হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "❌ Missing idToken (Validation Error)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Validation error for missing idToken', function() {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.success).to.be.false;",
+							"    console.log('✅ Correctly rejected - idToken missing');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/google",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "google"]
+				},
+				"description": "idToken না দিলে 400 validation error আসবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "❌ Invalid idToken (Auth Error)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Auth error for invalid idToken', function() {",
+							"    pm.expect([400, 401]).to.include(pm.response.code);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.success).to.be.false;",
+							"    console.log('✅ Correctly rejected - invalid idToken');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"idToken\": \"this.is.a.fake.invalid.token\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/google",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "google"]
+				},
+				"description": "Invalid/expired idToken দিলে 401 error আসবে।"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5005",
+			"type": "string"
+		}
+	]
+}

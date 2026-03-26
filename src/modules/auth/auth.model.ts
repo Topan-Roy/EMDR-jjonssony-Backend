@@ -3,7 +3,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUser extends Document {
   firstName: string;
   lastName: string;
+  fullName?: string;
   email: string;
+  phoneNumber?: string;
   password: string;
   authProvider: 'email' | 'google' | 'facebook';
   isVerified: boolean;
@@ -21,6 +23,8 @@ export interface IUser extends Document {
   lastLogin?: Date;
   googleId?: string;
   avatar?: string;
+  isDeleted: boolean;
+  deletedAt?: Date;
   fcmToken?: string;
   fcmPlatform?: 'android' | 'ios' | 'web';
   createdAt: Date;
@@ -127,6 +131,9 @@ const userSchema = new Schema<IUser>(
     fcmPlatform: { type: String, enum: ['android', 'ios', 'web'], select: false },
     googleId: { type: String, sparse: true, index: true },
     avatar:   { type: String },
+    phoneNumber: { type: String, trim: true },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date },
   },
   {
     timestamps: true,

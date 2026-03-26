@@ -266,6 +266,10 @@ export class AuthService {
       throw ApiError.unauthorized('Invalid email or password');
     }
 
+    if (user.isDeleted) {
+      throw ApiError.unauthorized('This account has been deleted');
+    }
+
     if (!user.isVerified) {
       throw ApiError.validationError('Please verify your email first');
     }

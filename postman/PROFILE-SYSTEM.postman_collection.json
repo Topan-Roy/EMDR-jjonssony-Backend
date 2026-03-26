@@ -1,0 +1,345 @@
+{
+	"info": {
+		"_postman_id": "profile-system-001",
+		"name": "Profile System - Get, Edit, Delete",
+		"description": "Profile module এর সব API। Get Profile, Update Profile (fullName only), এবং Delete Account।",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "0. Login (Get Token First)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    pm.environment.set('accessToken', response.data.session.accessToken);",
+							"    pm.environment.set('refreshToken', response.data.session.refreshToken);",
+							"    pm.environment.set('userId', response.data.user.id);",
+							"    console.log('✅ Login successful - token saved');",
+							"    pm.test('Login successful', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(response.data.session.accessToken).to.exist;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"rakib@example.com\",\n  \"password\": \"Test@1234\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/login",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "auth", "login"]
+				},
+				"description": "Profile API test করার আগে login করুন। accessToken automatically save হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "1. Get Profile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    const user = response.data;",
+							"    console.log('✅ Profile fetched successfully');",
+							"    console.log('Full Name:', user.fullName);",
+							"    console.log('Email:', user.email);",
+							"    console.log('Phone:', user.phoneNumber);",
+							"    pm.test('Get profile successful', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(user.fullName).to.exist;",
+							"        pm.expect(user.email).to.exist;",
+							"    });",
+							"    pm.test('Response has required fields', function() {",
+							"        pm.expect(user).to.have.property('id');",
+							"        pm.expect(user).to.have.property('fullName');",
+							"        pm.expect(user).to.have.property('email');",
+							"        pm.expect(user).to.have.property('phoneNumber');",
+							"        pm.expect(user).to.have.property('avatar');",
+							"        pm.expect(user).to.have.property('isVerified');",
+							"        pm.expect(user).to.have.property('role');",
+							"        pm.expect(user).to.have.property('memberSince');",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Logged-in user এর profile data নিন। fullName, email, phoneNumber, avatar, role, memberSince সব পাবেন।"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Update Profile (fullName)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    const user = response.data;",
+							"    console.log('✅ Profile updated successfully');",
+							"    console.log('Updated Full Name:', user.fullName);",
+							"    pm.test('Profile update successful', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(user.fullName).to.exist;",
+							"    });",
+							"    pm.test('isProfileCompleted is true', function() {",
+							"        pm.expect(user.isProfileCompleted).to.be.true;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fullName\": \"Rakib Hossain\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Profile এর fullName update করুন। firstName এবং lastName automatically split হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "2a. Update Profile - Validation Error (empty name)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Validation error returned', function() {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.success).to.be.false;",
+							"    console.log('✅ Correctly rejected empty fullName');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fullName\": \"\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Empty fullName দিলে validation error আসবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "2b. Update Profile - No Token (Should Fail)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Unauthorized without token', function() {",
+							"    pm.expect(pm.response.code).to.equal(401);",
+							"    console.log('✅ Correctly blocked - no token provided');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fullName\": \"Rakib Hossain\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Token ছাড়া request করলে 401 আসবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Delete Account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    // Clear all tokens after account deletion",
+							"    pm.environment.unset('accessToken');",
+							"    pm.environment.unset('refreshToken');",
+							"    pm.environment.unset('userId');",
+							"    console.log('✅ Account deleted successfully');",
+							"    console.log('🗑️ All tokens cleared');",
+							"    pm.test('Account deleted', function() {",
+							"        pm.expect(response.success).to.be.true;",
+							"        pm.expect(response.data.message).to.include('deleted');",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Account permanently delete করুন। এই action irreversible। সব tokens automatically clear হবে।"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Profile After Delete (Should Fail)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Profile not found after deletion', function() {",
+							"    pm.expect([401, 404]).to.include(pm.response.code);",
+							"    console.log('✅ Correctly blocked - account no longer exists');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/profile",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "profile"]
+				},
+				"description": "Delete করার পর profile access করার চেষ্টা। 401 বা 404 আসবে।"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}
