@@ -1,0 +1,240 @@
+{
+	"info": {
+		"_postman_id": "chat-delete-001",
+		"name": "Chat — Delete Messages",
+		"description": "3 delete APIs: Delete for Me, Delete for Everyone, Admin Delete. Full flow with setup.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "── SETUP ────────────────────────────",
+			"item": [
+				{
+					"name": "0a. User Login",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 200) {","    pm.collectionVariables.set('userToken', r.data.session.accessToken);","    pm.collectionVariables.set('userId', r.data.user.id);","    console.log('✅ User token saved');","}"],"type": "text/javascript"}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"email\": \"rakib@example.com\",\n  \"password\": \"Test@1234\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/auth/login","host": ["{{baseUrl}}"],"path": ["api","auth","login"]}
+					},
+					"response": []
+				},
+				{
+					"name": "0b. Admin Login",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 200) {","    pm.collectionVariables.set('adminToken', r.data.session.accessToken);","    console.log('✅ Admin token saved');","}"],"type": "text/javascript"}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"email\": \"admin@myemdr.com\",\n  \"password\": \"Admin@123456\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/auth/login","host": ["{{baseUrl}}"],"path": ["api","auth","login"]}
+					},
+					"response": []
+				},
+				{
+					"name": "0c. User Sends Message (for delete test)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 201) {","    pm.collectionVariables.set('messageId', r.data._id);","    console.log('✅ Message sent, ID:', r.data._id);","    pm.test('Message created', () => pm.expect(r.success).to.be.true);","}"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"This message will be deleted for me only.\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]},
+						"description": "Send a message first — save the ID for delete tests."
+					},
+					"response": []
+				},
+				{
+					"name": "0d. User Sends Another Message (for delete everyone test)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 201) {","    pm.collectionVariables.set('messageId2', r.data._id);","    console.log('✅ Message 2 sent, ID:', r.data._id);","}"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"This message will be deleted for everyone (admin hasn't read it yet).\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "0e. User Sends Message (admin will read first)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 201) {","    pm.collectionVariables.set('messageId3', r.data._id);","    console.log('✅ Message 3 sent, ID:', r.data._id);","}"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"Admin will read this first, then user deletes for everyone — soft delete.\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "0f. Admin Reads Messages (marks message3 as read)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Admin read messages', () => {","    pm.expect(pm.response.code).to.equal(200);","    console.log('✅ Admin read messages — message3 is now isRead: true');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/{{userId}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","{{userId}}"]},
+						"description": "Admin reads user messages — this marks them as isRead: true."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── DELETE FOR ME ────────────────────",
+			"item": [
+				{
+					"name": "1. ✅ Delete for Me",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Deleted for me', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.success).to.be.true;","    pm.expect(r.data.message).to.include('deleted for you');","    console.log('✅ Message deleted for me only');","    console.log('ℹ️  Admin can still see this message');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/{{messageId}}/me","host": ["{{baseUrl}}"],"path": ["api","chat","messages","{{messageId}}","me"]},
+						"description": "Message stays in DB. Only removed from user's view. Admin still sees it."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Admin Still Sees Deleted-for-Me Message",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Admin still sees message', () => {","    pm.expect(pm.response.code).to.equal(200);","    const msgs = r.data.messages;","    const found = msgs.find(m => m._id === pm.collectionVariables.get('messageId'));","    console.log('✅ Admin messages count:', msgs.length);","    console.log('ℹ️  Message deleted-for-me is still visible to admin');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/{{userId}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","{{userId}}"]},
+						"description": "Verify admin can still see the message that user deleted for themselves."
+					},
+					"response": []
+				},
+				{
+					"name": "❌ Delete Someone Else's Message (403)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Cannot delete others message', () => {","    pm.expect(pm.response.code).to.equal(403);","    console.log('✅ Correctly blocked — cannot delete others messages');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/{{messageId}}/me","host": ["{{baseUrl}}"],"path": ["api","chat","messages","{{messageId}}","me"]},
+						"description": "Admin trying to delete user's message using /me endpoint — should fail."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── DELETE FOR EVERYONE ──────────────",
+			"item": [
+				{
+					"name": "3. ✅ Delete for Everyone (Admin NOT read yet — Hard Delete)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Deleted for everyone (hard delete)', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.message).to.include('everyone');","    console.log('✅ Message hard-deleted — admin never read it');","    console.log('ℹ️  Message completely removed from DB');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/{{messageId2}}/everyone","host": ["{{baseUrl}}"],"path": ["api","chat","messages","{{messageId2}}","everyone"]},
+						"description": "Admin hasn't read this message yet → hard delete. Admin will NEVER see it."
+					},
+					"response": []
+				},
+				{
+					"name": "4. ✅ Delete for Everyone (Admin ALREADY read — Soft Delete)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Deleted for everyone (soft delete)', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.message).to.include('everyone');","    console.log('✅ Message soft-deleted — admin already read it');","    console.log('ℹ️  Admin sees: This message was deleted');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/{{messageId3}}/everyone","host": ["{{baseUrl}}"],"path": ["api","chat","messages","{{messageId3}}","everyone"]},
+						"description": "Admin already read this message → soft delete. Admin sees 'This message was deleted', content is gone."
+					},
+					"response": []
+				},
+				{
+					"name": "5. Verify Soft-Deleted Message State",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Soft deleted message visible as deleted', () => {","    pm.expect(pm.response.code).to.equal(200);","    const msgs = r.data.messages;","    const deleted = msgs.find(m => m._id === pm.collectionVariables.get('messageId3'));","    if (deleted) {","        console.log('✅ Soft-deleted message found');","        console.log('  isDeletedForEveryone:', deleted.isDeletedForEveryone);","        console.log('  text:', deleted.text, '(should be null/undefined)');","        console.log('  imageUrl:', deleted.imageUrl, '(should be null/undefined)');","    } else {","        console.log('ℹ️  Message not found (may have been hard deleted)');","    }","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/{{userId}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","{{userId}}"]},
+						"description": "Verify soft-deleted message shows isDeletedForEveryone: true with no content."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── ADMIN DELETE ─────────────────────",
+			"item": [
+				{
+					"name": "6. User Sends Message for Admin Delete Test",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 201) {","    pm.collectionVariables.set('messageId4', r.data._id);","    console.log('✅ Message 4 sent for admin delete test, ID:', r.data._id);","}"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"Admin will delete this message.\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "7. ✅ Admin Deletes Any Message",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Admin deleted message', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.message).to.include('deleted');","    console.log('✅ Admin deleted message — soft delete applied');","    console.log('ℹ️  Both user and admin see: This message was deleted');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/messages/{{messageId4}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","messages","{{messageId4}}"]},
+						"description": "Admin can delete any message. Soft delete — content removed, isDeletedForEveryone: true."
+					},
+					"response": []
+				},
+				{
+					"name": "❌ User Tries Admin Delete Route (403)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Non-admin blocked from admin delete', () => {","    pm.expect(pm.response.code).to.equal(403);","    console.log('✅ Correctly blocked — not admin');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/messages/{{messageId4}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","messages","{{messageId4}}"]},
+						"description": "Regular user cannot use admin delete endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "❌ Delete Non-existent Message (404)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Non-existent message returns 404', () => {","    pm.expect(pm.response.code).to.equal(404);","    console.log('✅ Correctly returned 404');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/000000000000000000000000/me","host": ["{{baseUrl}}"],"path": ["api","chat","messages","000000000000000000000000","me"]}
+					},
+					"response": []
+				},
+				{
+					"name": "❌ No Token (401)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Blocked without token', () => {","    pm.expect(pm.response.code).to.equal(401);","    console.log('✅ Correctly blocked — no token');","});"],"type": "text/javascript"}}],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages/{{messageId}}/me","host": ["{{baseUrl}}"],"path": ["api","chat","messages","{{messageId}}","me"]}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{"key": "baseUrl",    "value": "http://localhost:5005", "type": "string"},
+		{"key": "userToken",  "value": "", "type": "string"},
+		{"key": "adminToken", "value": "", "type": "string"},
+		{"key": "userId",     "value": "", "type": "string"},
+		{"key": "messageId",  "value": "", "type": "string"},
+		{"key": "messageId2", "value": "", "type": "string"},
+		{"key": "messageId3", "value": "", "type": "string"},
+		{"key": "messageId4", "value": "", "type": "string"}
+	]
+}

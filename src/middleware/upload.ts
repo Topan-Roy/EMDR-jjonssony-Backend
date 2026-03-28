@@ -4,10 +4,9 @@ import { ApiError } from '../utils/ApiError';
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_SIZE_MB = 5;
 
-// Store in memory — we stream directly to Cloudinary
 const storage = multer.memoryStorage();
 
-export const uploadProfilePic = multer({
+const imageUploader = multer({
   storage,
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
@@ -18,4 +17,12 @@ export const uploadProfilePic = multer({
     }
     cb(null, true);
   },
-}).single('profilePic');
+});
+
+// Named exports — semantically correct per use case
+export const uploadProfilePic = imageUploader.single('profilePic');
+
+// Chat image — optional file field, also accepts text-only form-data
+export const uploadChatImage = imageUploader.fields([
+  { name: 'image', maxCount: 1 },
+]);

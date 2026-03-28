@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "chat-system-001",
+		"name": "Chat System — User ↔ Admin",
+		"description": "Complete chat flow — User sends text/image to Admin, Admin replies. Includes unread counts, conversation list, pagination.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "── SETUP ────────────────────────────",
+			"item": [
+				{
+					"name": "0a. User Login",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 200) {","    pm.collectionVariables.set('userToken', r.data.session.accessToken);","    pm.collectionVariables.set('userId', r.data.user.id);","    console.log('✅ User token saved, ID:', r.data.user.id);","    pm.test('User login OK', () => pm.expect(r.success).to.be.true);","}"],"type": "text/javascript"}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"email\": \"rakib@example.com\",\n  \"password\": \"Test@1234\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/auth/login","host": ["{{baseUrl}}"],"path": ["api","auth","login"]}
+					},
+					"response": []
+				},
+				{
+					"name": "0b. Admin Login",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","if (pm.response.code === 200) {","    pm.collectionVariables.set('adminToken', r.data.session.accessToken);","    pm.collectionVariables.set('adminId', r.data.user.id);","    console.log('✅ Admin token saved');","    pm.test('Admin login OK', () => pm.expect(r.data.user.role).to.equal('admin'));","}"],"type": "text/javascript"}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"email\": \"admin@myemdr.com\",\n  \"password\": \"Admin@123456\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/auth/login","host": ["{{baseUrl}}"],"path": ["api","auth","login"]}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── USER FLOW ────────────────────────",
+			"item": [
+				{
+					"name": "1. GET Unread Count (Before Any Message)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Unread count returned', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data).to.have.property('unreadCount');","    console.log('✅ Unread count:', r.data.unreadCount);","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/unread-count","host": ["{{baseUrl}}"],"path": ["api","chat","unread-count"]}
+					},
+					"response": []
+				},
+				{
+					"name": "2. User Sends Text Message",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Text message sent', () => {","    pm.expect(pm.response.code).to.equal(201);","    pm.expect(r.data.type).to.equal('text');","    pm.expect(r.data.senderRole).to.equal('user');","    pm.expect(r.data.text).to.exist;","    pm.collectionVariables.set('messageId1', r.data._id);","    console.log('✅ Text message sent:', r.data.text);","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"Hello Admin! I need help with my account.\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]},
+						"description": "User sends first text message to admin."
+					},
+					"response": []
+				},
+				{
+					"name": "3. User Sends Another Text Message",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Second message sent', () => {","    pm.expect(pm.response.code).to.equal(201);","    console.log('✅ Second message sent');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"I cannot reset my password. Please help! 🙏\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "4. User Sends Image Message",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Image message sent', () => {","    pm.expect(pm.response.code).to.equal(201);","    pm.expect(r.data.type).to.equal('image');","    pm.expect(r.data.imageUrl).to.exist;","    pm.expect(r.data.imageUrl).to.include('cloudinary');","    console.log('✅ Image uploaded:', r.data.imageUrl);","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "type","value": "image","type": "text"},
+								{"key": "profilePic","type": "file","src": "","description": "⚠️ Select an image file to upload"}
+							]
+						},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]},
+						"description": "⚠️ Select a real image file in the profilePic field."
+					},
+					"response": []
+				},
+				{
+					"name": "5. GET My Messages (Conversation History)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Messages returned', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.messages).to.be.an('array');","    pm.expect(r.data.total).to.be.greaterThan(0);","    console.log('✅ Total messages:', r.data.total);","    console.log('📄 Page:', r.data.page, '/', r.data.totalPages);","    r.data.messages.forEach(m => {","        console.log(`  [${m.senderRole}] ${m.type === 'image' ? '📷 Image' : m.text}`);","    });","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages?page=1&limit=20","host": ["{{baseUrl}}"],"path": ["api","chat","messages"],"query": [{"key": "page","value": "1"},{"key": "limit","value": "20"}]},
+						"description": "Get conversation history. Admin messages auto-marked as read."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── ADMIN FLOW ───────────────────────",
+			"item": [
+				{
+					"name": "6. Admin Gets All Conversations",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Conversations list returned', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.conversations).to.be.an('array');","    if (r.data.conversations.length > 0) {","        const conv = r.data.conversations[0];","        pm.collectionVariables.set('chatUserId', conv.userId._id);","        console.log('✅ Total conversations:', r.data.total);","        r.data.conversations.forEach(c => {","            console.log(`  👤 ${c.userId.firstName} ${c.userId.lastName} | unread: ${c.unreadByAdmin} | last: ${c.lastMessage}`);","        });","    }","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/conversations?page=1&limit=20","host": ["{{baseUrl}}"],"path": ["api","chat","admin","conversations"],"query": [{"key": "page","value": "1"},{"key": "limit","value": "20"}]},
+						"description": "Admin sees all user conversations sorted by latest message."
+					},
+					"response": []
+				},
+				{
+					"name": "7. Admin Gets Specific User Messages",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('User messages returned to admin', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.messages).to.be.an('array');","    console.log('✅ User messages for admin:', r.data.total);","    r.data.messages.forEach(m => {","        console.log(`  [${m.senderRole}] ${m.type === 'image' ? '📷 Image' : m.text}`);","    });","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/{{chatUserId}}","host": ["{{baseUrl}}"],"path": ["api","chat","admin","{{chatUserId}}"]},
+						"description": "Admin reads user's messages — auto marks user messages as read."
+					},
+					"response": []
+				},
+				{
+					"name": "8. Admin Replies with Text",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Admin text reply sent', () => {","    pm.expect(pm.response.code).to.equal(201);","    pm.expect(r.data.senderRole).to.equal('admin');","    pm.expect(r.data.type).to.equal('text');","    console.log('✅ Admin replied:', r.data.text);","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"userId\": \"{{chatUserId}}\",\n  \"type\": \"text\",\n  \"text\": \"Hi! I can help you reset your password. Please go to Settings > Security > Reset Password.\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/reply","host": ["{{baseUrl}}"],"path": ["api","chat","admin","reply"]},
+						"description": "Admin replies to user with text message."
+					},
+					"response": []
+				},
+				{
+					"name": "9. Admin Replies with Image",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Admin image reply sent', () => {","    pm.expect(pm.response.code).to.equal(201);","    pm.expect(r.data.type).to.equal('image');","    pm.expect(r.data.imageUrl).to.include('cloudinary');","    console.log('✅ Admin image reply sent:', r.data.imageUrl);","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "userId","value": "{{chatUserId}}","type": "text"},
+								{"key": "type","value": "image","type": "text"},
+								{"key": "profilePic","type": "file","src": "","description": "⚠️ Select screenshot or guide image"}
+							]
+						},
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/reply","host": ["{{baseUrl}}"],"path": ["api","chat","admin","reply"]},
+						"description": "Admin sends image (screenshot/guide) to user."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── VERIFY FLOW ──────────────────────",
+			"item": [
+				{
+					"name": "10. User Checks Unread Count (After Admin Reply)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Unread count updated', () => {","    pm.expect(pm.response.code).to.equal(200);","    console.log('✅ User unread count:', r.data.unreadCount);","    if (r.data.unreadCount > 0) {","        console.log('🔔 User has', r.data.unreadCount, 'unread messages from admin');","    }","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/unread-count","host": ["{{baseUrl}}"],"path": ["api","chat","unread-count"]}
+					},
+					"response": []
+				},
+				{
+					"name": "11. User Gets Full Conversation (Marks Admin Messages Read)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Full conversation returned', () => {","    pm.expect(pm.response.code).to.equal(200);","    const msgs = r.data.messages;","    console.log('✅ Full conversation:');","    msgs.forEach(m => {","        const icon = m.senderRole === 'user' ? '👤' : '👑';","        const content = m.type === 'image' ? '📷 Image' : m.text;","        console.log(`  ${icon} [${m.senderRole}]: ${content}`);","    });","    console.log('📊 Total:', r.data.total, '| Unread after read:', '0');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/messages","host": ["{{baseUrl}}"],"path": ["api","chat","messages"]},
+						"description": "Fetching messages auto-marks admin messages as read."
+					},
+					"response": []
+				},
+				{
+					"name": "12. User Unread Count (Should Be 0 Now)",
+					"event": [{"listen": "test","script": {"exec": ["const r = pm.response.json();","pm.test('Unread count is 0 after reading', () => {","    pm.expect(pm.response.code).to.equal(200);","    pm.expect(r.data.unreadCount).to.equal(0);","    console.log('✅ Unread count reset to 0 after reading messages');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/unread-count","host": ["{{baseUrl}}"],"path": ["api","chat","unread-count"]}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "── EDGE CASES ───────────────────────",
+			"item": [
+				{
+					"name": "❌ No Token (401)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Blocked without token', () => {","    pm.expect(pm.response.code).to.equal(401);","    console.log('✅ Correctly blocked');","});"],"type": "text/javascript"}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"Should be blocked\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "❌ User Tries Admin Route (403)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Non-admin blocked from admin route', () => {","    pm.expect(pm.response.code).to.equal(403);","    console.log('✅ Correctly blocked — not admin');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "GET","header": [],
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/conversations","host": ["{{baseUrl}}"],"path": ["api","chat","admin","conversations"]}
+					},
+					"response": []
+				},
+				{
+					"name": "❌ Empty Text Message (400)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Empty text rejected', () => {","    pm.expect(pm.response.code).to.equal(400);","    console.log('✅ Correctly rejected — text cannot be empty');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{userToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"type\": \"text\",\n  \"text\": \"\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/send","host": ["{{baseUrl}}"],"path": ["api","chat","send"]}
+					},
+					"response": []
+				},
+				{
+					"name": "❌ Admin Reply to Non-existent User (404)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test('Non-existent user returns 404', () => {","    pm.expect(pm.response.code).to.equal(404);","    console.log('✅ Correctly returned 404 — user has no conversation');","});"],"type": "text/javascript"}}],
+					"request": {
+						"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{adminToken}}","type": "string"}]},
+						"method": "POST",
+						"header": [{"key": "Content-Type","value": "application/json"}],
+						"body": {"mode": "raw","raw": "{\n  \"userId\": \"000000000000000000000000\",\n  \"type\": \"text\",\n  \"text\": \"Hello?\"\n}"},
+						"url": {"raw": "{{baseUrl}}/api/chat/admin/reply","host": ["{{baseUrl}}"],"path": ["api","chat","admin","reply"]}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{"key": "baseUrl",    "value": "http://localhost:5005", "type": "string"},
+		{"key": "userToken",  "value": "", "type": "string"},
+		{"key": "adminToken", "value": "", "type": "string"},
+		{"key": "userId",     "value": "", "type": "string"},
+		{"key": "adminId",    "value": "", "type": "string"},
+		{"key": "chatUserId", "value": "", "type": "string"},
+		{"key": "messageId1", "value": "", "type": "string"}
+	]
+}
