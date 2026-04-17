@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "JOURNEY-SYSTEM",
+    "description": "Create Your Journey — CRUD with JSON body",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://your-tunnel.trycloudflare.com/api", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "userToken", "value": "", "type": "string" },
+    { "key": "journeyId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Create Journey",
+      "event": [{ "listen": "test", "script": { "exec": ["const r = pm.response.json(); if(r.success) pm.collectionVariables.set('journeyId', r.data._id);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"journeyName\": \"My Healing Journey\",\n  \"description\": \"A journey to heal trauma through EMDR therapy\",\n  \"imageUrl\": \"https://res.cloudinary.com/dbglkfj2z/image/upload/v1/my-emdr/sample.jpg\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/journeys", "host": ["{{baseUrl}}"], "path": ["journeys"] }
+      }
+    },
+    {
+      "name": "Get All Journeys",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": { "raw": "{{baseUrl}}/journeys", "host": ["{{baseUrl}}"], "path": ["journeys"] }
+      }
+    },
+    {
+      "name": "Get Journey By ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": { "raw": "{{baseUrl}}/journeys/{{journeyId}}", "host": ["{{baseUrl}}"], "path": ["journeys", "{{journeyId}}"] }
+      }
+    },
+    {
+      "name": "Update Journey",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"journeyName\": \"Updated Journey Name\",\n  \"description\": \"Updated description\",\n  \"imageUrl\": \"https://res.cloudinary.com/dbglkfj2z/image/upload/v1/my-emdr/updated.jpg\",\n  \"isActive\": true\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/journeys/{{journeyId}}", "host": ["{{baseUrl}}"], "path": ["journeys", "{{journeyId}}"] }
+      }
+    },
+    {
+      "name": "Delete Journey",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+        "url": { "raw": "{{baseUrl}}/journeys/{{journeyId}}", "host": ["{{baseUrl}}"], "path": ["journeys", "{{journeyId}}"] }
+      }
+    }
+  ]
+}

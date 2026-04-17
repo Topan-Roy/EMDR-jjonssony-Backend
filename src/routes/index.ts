@@ -16,6 +16,7 @@ import assessmentRoutes from '../modules/assessment/assessment.routes';
 
 import paymentRoutes from '../modules/payment/payment.routes';
 import categoryRoutes from '../modules/category/category.routes';
+import journeyRoutes from '../modules/journey/journey.routes';
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use('/onboarding', onboardingRoutes);
 router.use('/assessment', assessmentRoutes);
 router.use('/payment', paymentRoutes);
 router.use('/', categoryRoutes);
+router.use('/journeys', journeyRoutes);
 
 export default router;
