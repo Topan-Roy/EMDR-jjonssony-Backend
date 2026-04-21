@@ -7,11 +7,11 @@ import { createJourneySchema, updateJourneySchema, idParamSchema } from './journ
 const router = Router();
 
 router.use(authenticate);
-router.get('/',    ctrl.list);
+router.get('/', ctrl.list);
 router.get('/:id', validate(idParamSchema), ctrl.getById);
 
-router.post('/',      validate(createJourneySchema), ctrl.create);
-router.put('/:id',    validate(updateJourneySchema), ctrl.update);
-router.delete('/:id', validate(idParamSchema),       ctrl.delete);
+router.post('/', validate(createJourneySchema), ctrl.create);
+router.put('/:id', validate(updateJourneySchema), ctrl.update);
+router.delete('/:id', validate(idParamSchema), ctrl.delete);
 
 export default router;

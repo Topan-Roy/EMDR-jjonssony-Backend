@@ -9,11 +9,10 @@ export interface IUser {
   updatedAt?: Date;
 }
 
+import { JWTPayload } from '../utils/jwt';
+
 export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-  };
+  user?: JWTPayload;
 }
 
 export interface LoginResponse {

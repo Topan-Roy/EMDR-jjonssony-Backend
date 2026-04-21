@@ -8,8 +8,8 @@ export const journeyService = {
     const journey = await Journey.create({
       journeyName: data.journeyName,
       description: data.description,
-      imageUrl:    data.imageUrl,
-      createdBy:   userId,
+      imageUrl: data.imageUrl,
+      createdBy: userId,
     });
 
     logger.info('Journey created', { id: journey._id });
@@ -19,8 +19,9 @@ export const journeyService = {
       .lean();
   },
 
-  async list() {
-    return Journey.find()
+  async list(userId?: string) {
+    const filter = userId ? { createdBy: userId } : {};
+    return Journey.find(filter)
       .select('-imagePublicId')
       .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 })

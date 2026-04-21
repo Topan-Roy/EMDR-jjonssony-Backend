@@ -18,6 +18,8 @@ import paymentRoutes from '../modules/payment/payment.routes';
 import categoryRoutes from '../modules/category/category.routes';
 import journeyRoutes from '../modules/journey/journey.routes';
 import bilateralRoutes from '../modules/bilateral/bilateral.routes';
+import progressRoutes from '../modules/progress/progress.routes';
+import uploadRoutes from '../modules/upload/upload.routes';
 
 const router = Router();
 
@@ -39,5 +41,7 @@ router.use('/payment', paymentRoutes);
 router.use('/', categoryRoutes);
 router.use('/journeys', journeyRoutes);
 router.use('/bilateral', bilateralRoutes);
+router.use('/progress', progressRoutes);
+router.use('/upload', uploadRoutes);
 
 export default router;

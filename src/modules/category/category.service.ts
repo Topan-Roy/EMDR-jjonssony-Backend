@@ -4,21 +4,21 @@ import { ApiError } from '../../utils/ApiError';
 import { cloudinary } from '../../config/cloudinary';
 import { logger } from '../../config/logger';
 
- 
+
 const toSlug = (name: string) =>
   name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
 
 const ALLOWED_MIMETYPES: Record<string, string> = {
-  'image/jpeg':    'image',
-  'image/jpg':     'image',
-  'image/png':     'image',
-  'image/webp':    'image',
+  'image/jpeg': 'image',
+  'image/jpg': 'image',
+  'image/png': 'image',
+  'image/webp': 'image',
   'image/svg+xml': 'image',
-  'video/mp4':     'video',
-  'video/mpeg':    'video',
-  'audio/mpeg':    'audio',
-  'audio/mp3':     'audio',
-  'audio/wav':     'audio',
+  'video/mp4': 'video',
+  'video/mpeg': 'video',
+  'audio/mpeg': 'audio',
+  'audio/mp3': 'audio',
+  'audio/wav': 'audio',
 };
 
 const uploadToCloudinary = (
@@ -29,10 +29,11 @@ const uploadToCloudinary = (
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        public_id:     publicId,
-        overwrite:     true,
+        public_id: publicId,
+        overwrite: true,
         resource_type: resourceType,
-        folder:        'my-emdr/media',
+        folder: 'my-emdr/media',
+        chunk_size: 6000000,
         ...(resourceType === 'image' && {
           transformation: [
             { quality: 'auto:best', fetch_format: 'auto' },
@@ -41,20 +42,20 @@ const uploadToCloudinary = (
       },
       (err, result) => {
         if (err || !result) {
-          logger.error('Cloudinary upload failed', { err });
-          return reject(new ApiError(500, 'UPLOAD_FAILED', 'File upload failed'));
+          logger.error('Cloudinary upload failed', { error: err?.message || err, publicId });
+          return reject(new ApiError(500, 'UPLOAD_FAILED', `File upload failed: ${err?.message || 'Unknown error'}`));
         }
         resolve({
-          url:      result.secure_url,
+          url: result.secure_url,
           publicId: result.public_id,
-          size:     result.bytes,
+          size: result.bytes,
         });
       },
     );
     stream.end(buffer);
   });
 
- 
+
 export const categoryService = {
 
   async create(userId: string, categoryName: string) {
@@ -102,7 +103,7 @@ export const categoryService = {
     const category = await Category.findById(id);
     if (!category) throw ApiError.notFound('Category not found');
 
-     const mediaList = await Media.find({ categoryId: id }).select('+publicId').lean();
+    const mediaList = await Media.find({ categoryId: id }).select('+publicId').lean();
     await Promise.allSettled(
       mediaList.map(m => cloudinary.uploader.destroy(m.publicId, { resource_type: m.mediaType === 'image' ? 'image' : 'video' }))
     );
@@ -114,7 +115,7 @@ export const categoryService = {
   },
 };
 
- 
+
 export const mediaService = {
 
   async upload(
@@ -124,19 +125,16 @@ export const mediaService = {
     status: 'active' | 'inactive',
     file: Express.Multer.File,
   ) {
-     const category = await Category.findById(categoryId);
+    const category = await Category.findById(categoryId);
     if (!category) throw ApiError.notFound('Category not found');
 
-     const mediaType = ALLOWED_MIMETYPES[file.mimetype];
-    if (!mediaType) {
-      throw new ApiError(400, 'INVALID_FILE_TYPE', 'Only SVG, PNG, JPG, MP4, MP3 files are allowed');
+    const mediaType = (ALLOWED_MIMETYPES[file.mimetype] || 'raw') as any;
+
+    if (file.size > 400 * 1024 * 1024) {
+      throw new ApiError(400, 'FILE_TOO_LARGE', 'File size cannot exceed 400MB');
     }
 
-     if (file.size > 10 * 1024 * 1024) {
-      throw new ApiError(400, 'FILE_TOO_LARGE', 'File size cannot exceed 10MB');
-    }
-
-    const resourceType = mediaType === 'image' ? 'image' : 'video';
+    const resourceType = mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'raw';
     const publicId = `media_${userId}_${Date.now()}`;
 
     const uploaded = await uploadToCloudinary(file.buffer, publicId, resourceType);
@@ -144,13 +142,13 @@ export const mediaService = {
     const media = await Media.create({
       categoryId,
       name,
-      url:          uploaded.url,
-      publicId:     uploaded.publicId,
+      url: uploaded.url,
+      publicId: uploaded.publicId,
       mediaType,
       originalName: file.originalname,
-      size:         uploaded.size,
+      size: uploaded.size,
       status,
-      uploadedBy:   userId,
+      uploadedBy: userId,
     });
 
     logger.info('Media uploaded', { id: media._id, categoryId, mediaType });
@@ -160,7 +158,7 @@ export const mediaService = {
   async list(query: { page: number; limit: number; categoryId?: string; status?: string }) {
     const filter: Record<string, unknown> = {};
     if (query.categoryId) filter.categoryId = query.categoryId;
-    if (query.status)     filter.status = query.status;
+    if (query.status) filter.status = query.status;
 
     const skip = (query.page - 1) * query.limit;
     const [items, total] = await Promise.all([

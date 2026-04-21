@@ -1,0 +1,53 @@
+{
+	"info": {
+		"name": "MY-EMDR Media Upload APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Upload Media File (Video, Image, Audio)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "YOUR_ACCESS_TOKEN_HERE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"description": "Select any image (jpg/png/webp), video (mp4/webm) or audio (mp3/wav) file here."
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/upload",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"upload"
+					]
+				},
+				"description": "Upload a media file. It automatically detects if it is an image, video, or audio file, uploads it to Cloudinary, and returns the public link."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}

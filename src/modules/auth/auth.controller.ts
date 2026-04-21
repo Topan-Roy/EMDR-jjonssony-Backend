@@ -55,7 +55,7 @@ export class AuthController {
   async recoverAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { newPassword } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
       const result = await authService.recoverAccount(userId, newPassword);
       res.status(200).json({ success: true, data: result, meta: { timestamp: new Date().toISOString() } });
     } catch (error) {
@@ -76,7 +76,7 @@ export class AuthController {
   async verifyEmailWithToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { otp } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
       const result = await authService.verifyEmailWithToken(userId, otp);
       res.status(200).json({ success: true, data: result, meta: { timestamp: new Date().toISOString() } });
     } catch (error) {
@@ -87,7 +87,7 @@ export class AuthController {
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { refreshToken } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
       const result = await authService.logout(userId, refreshToken);
       res.status(200).json({ success: true, data: result, meta: { timestamp: new Date().toISOString() } });
     } catch (error) {

@@ -58,8 +58,8 @@ app.use('/api', rateLimit({
 }));
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
 // Health check — includes DB + Redis status
 app.get('/health', async (_req, res) => {

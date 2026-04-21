@@ -6,7 +6,17 @@ import { ApiError } from '../../utils/ApiError';
 import { env } from '../../config/env';
 import { logger } from '../../config/logger';
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-03-31.basil' });
+// Lazy Stripe init — only fails when payment endpoints are actually called
+let _stripe: Stripe | null = null;
+const getStripe = (): Stripe => {
+  if (!_stripe) {
+    if (!env.STRIPE_SECRET_KEY || env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
+      throw new ApiError(503, 'PAYMENT_UNAVAILABLE', 'Payment system not configured. Add STRIPE_SECRET_KEY to .env');
+    }
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-03-31.basil' });
+  }
+  return _stripe;
+};
 
 export const paymentService = {
 
@@ -26,7 +36,7 @@ export const paymentService = {
     if (existingPayment?.stripeCustomerId) {
       stripeCustomerId = existingPayment.stripeCustomerId;
     } else {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         metadata: { userId: userId.toString() },
@@ -34,10 +44,9 @@ export const paymentService = {
       stripeCustomerId = customer.id;
     }
 
-    // Amount in pence (£120 = 12000 pence)
     const amountInPence = Math.round(plan.price * 100);
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: amountInPence,
       currency: 'gbp',
       customer: stripeCustomerId,
@@ -76,7 +85,7 @@ export const paymentService = {
 
   // Confirm Payment — called after Flutter Stripe SDK confirms on client
   async confirmPayment(userId: string, paymentIntentId: string) {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.metadata.userId !== userId.toString()) {
       throw ApiError.forbidden('Payment does not belong to this user');
@@ -130,7 +139,7 @@ export const paymentService = {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
+      event = getStripe().webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
     } catch {
       throw ApiError.validationError('Invalid webhook signature');
     }

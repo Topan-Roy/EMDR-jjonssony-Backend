@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "PROGRESS-TRACKING",
+    "description": "Media Progress + Category Progress + Journey Progress",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",     "value": "https://your-tunnel.trycloudflare.com/api", "type": "string" },
+    { "key": "userToken",   "value": "", "type": "string" },
+    { "key": "mediaId",     "value": "", "type": "string" },
+    { "key": "categoryId",  "value": "", "type": "string" },
+    { "key": "journeyId",   "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Update Media Progress",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{userToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"watchedSeconds\": 120,\n  \"totalSeconds\": 300\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/progress/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["progress","media","{{mediaId}}"] },
+        "description": "Call every 10-15 seconds from Flutter video player.\nwatchedSeconds = how many seconds user has watched\ntotalSeconds = full video duration\n\nBackend calculates: percentage = (120/300)*100 = 40%\nisCompleted = percentage >= 80"
+      }
+    },
+    {
+      "name": "Get Category Progress",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": { "raw": "{{baseUrl}}/progress/category/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["progress","category","{{categoryId}}"] },
+        "description": "Returns how much % of a category the user has completed.\nExample response:\n{\n  categoryProgress: 60,\n  totalMedia: 5,\n  completedMedia: 3,\n  mediaList: [...]\n}"
+      }
+    },
+    {
+      "name": "Get Journey Progress",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+        "url": { "raw": "{{baseUrl}}/progress/journey/{{journeyId}}", "host": ["{{baseUrl}}"], "path": ["progress","journey","{{journeyId}}"] },
+        "description": "Returns overall journey progress across all categories.\nExample response:\n{\n  journeyProgress: 45,\n  totalCategories: 12,\n  completedCategories: 5,\n  categories: [...]\n}"
+      }
+    },
+    {
+      "name": "Create Journey (with categoryIds)",
+      "event": [{ "listen": "test", "script": { "exec": ["const r=pm.response.json(); if(r.success) pm.collectionVariables.set('journeyId', r.data._id);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{userToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"journeyName\": \"Healing Journey\",\n  \"description\": \"A 12-week EMDR healing program\",\n  \"imageUrl\": \"https://res.cloudinary.com/dbglkfj2z/image/upload/v1/my-emdr/journey.jpg\",\n  \"categoryIds\": [\n    \"{{categoryId}}\"\n  ]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/journeys", "host": ["{{baseUrl}}"], "path": ["journeys"] },
+        "description": "categoryIds = array of category ObjectIds to link to this journey"
+      }
+    }
+  ]
+}

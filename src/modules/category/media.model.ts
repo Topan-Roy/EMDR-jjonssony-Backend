@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type MediaStatus = 'active' | 'inactive';
-export type MediaType = 'image' | 'video' | 'audio';
+export type MediaType = 'image' | 'video' | 'audio' | 'raw';
 
 export interface IMedia extends Document {
   categoryId: mongoose.Types.ObjectId;
@@ -11,6 +11,7 @@ export interface IMedia extends Document {
   mediaType: MediaType;
   originalName: string;
   size: number;
+  duration?: number;   // seconds — for video/audio
   status: MediaStatus;
   uploadedBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -23,10 +24,11 @@ const mediaSchema = new Schema<IMedia>(
     name:         { type: String, required: [true, 'Name is required'], trim: true, maxlength: 200 },
     url:          { type: String, required: true },
     publicId:     { type: String, required: true, select: false },
-    mediaType:    { type: String, enum: ['image', 'video', 'audio'], required: true },
+    mediaType:    { type: String, enum: ['image', 'video', 'audio', 'raw'], required: true },
     originalName: { type: String, trim: true },
     size:         { type: Number },
     status:       { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+    duration:     { type: Number },   // seconds
     uploadedBy:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }
