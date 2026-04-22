@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import mongoose from 'mongoose';
 import { Payment } from './payment.model';
 import { SubscriptionPlan, UserSubscription, SubscriptionStatus } from '../subscriptions/subscription.model';
 import { User } from '../auth/auth.model';
@@ -13,7 +14,7 @@ const getStripe = (): any => {
     if (!env.STRIPE_SECRET_KEY || env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
       throw new ApiError(503, 'PAYMENT_UNAVAILABLE', 'Payment system not configured. Add STRIPE_SECRET_KEY to .env');
     }
-    _stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' as any });
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: undefined as any }); 
   }
   return _stripe!;
 };
@@ -173,6 +174,3 @@ export const paymentService = {
       .lean();
   },
 };
-
-// fix mongoose import
-import mongoose from 'mongoose';

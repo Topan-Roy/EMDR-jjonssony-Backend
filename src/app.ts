@@ -93,6 +93,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'MY-EMDR API Documentation',
 }));
 
+// Serving payment tester diagnostic page
+import path from 'path';
+app.get('/test-payment', (_req, res) => {
+  res.sendFile(path.join(process.cwd(), 'payment-tester.html'));
+});
+
 // API routes
 app.use('/api', routes);
 
