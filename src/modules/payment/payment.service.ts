@@ -7,15 +7,15 @@ import { env } from '../../config/env';
 import { logger } from '../../config/logger';
 
 // Lazy Stripe init — only fails when payment endpoints are actually called
-let _stripe: Stripe | null = null;
-const getStripe = (): Stripe => {
+let _stripe: any = null;
+const getStripe = (): any => {
   if (!_stripe) {
     if (!env.STRIPE_SECRET_KEY || env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
       throw new ApiError(503, 'PAYMENT_UNAVAILABLE', 'Payment system not configured. Add STRIPE_SECRET_KEY to .env');
     }
-    _stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-03-31.basil' });
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' as any });
   }
-  return _stripe;
+  return _stripe!;
 };
 
 export const paymentService = {
@@ -136,7 +136,7 @@ export const paymentService = {
 
   // Stripe Webhook — handles async payment events
   async handleWebhook(rawBody: Buffer, signature: string) {
-    let event: Stripe.Event;
+    let event: any;
 
     try {
       event = getStripe().webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
@@ -145,7 +145,7 @@ export const paymentService = {
     }
 
     if (event.type === 'payment_intent.succeeded') {
-      const intent = event.data.object as Stripe.PaymentIntent;
+      const intent = event.data.object as any;
       await Payment.findOneAndUpdate(
         { stripePaymentIntentId: intent.id },
         { status: 'succeeded' }
@@ -154,7 +154,7 @@ export const paymentService = {
     }
 
     if (event.type === 'payment_intent.payment_failed') {
-      const intent = event.data.object as Stripe.PaymentIntent;
+      const intent = event.data.object as any;
       await Payment.findOneAndUpdate(
         { stripePaymentIntentId: intent.id },
         { status: 'failed' }

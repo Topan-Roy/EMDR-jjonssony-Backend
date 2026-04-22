@@ -2,7 +2,7 @@ import { User } from '../auth/auth.model';
 import { Notification } from './notification.model';
 import { sendToToken, sendToTopic, NotificationPayload } from '../../utils/sendNotification';
 import { ApiError } from '../../utils/ApiError';
-import { notificationQueue } from '../../config/queue';
+import { getNotificationQueue } from '../../config/queue';
 import { logger } from '../../config/logger';
 
 export const notificationService = {
@@ -61,7 +61,13 @@ export const notificationService = {
     const tokens = users.map(u => u.fcmToken as string);
     const userIds = users.map(u => u._id.toString());
 
-    await notificationQueue.add('broadcast', {
+    const queue = getNotificationQueue();
+    if (!queue) {
+      logger.warn('Queue unavailable — broadcast skipped');
+      return { queued: 0, message: 'Redis unavailable, broadcast not queued' };
+    }
+
+    await queue.add('broadcast', {
       tokens,
       userIds,
       ...payload,
