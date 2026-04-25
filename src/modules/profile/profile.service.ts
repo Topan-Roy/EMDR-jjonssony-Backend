@@ -12,6 +12,7 @@ import mongoose from 'mongoose';
 const profileCacheKey = (userId: string) => `profile:${userId}`;
 
 export class ProfileService {
+
   private async getExtraUserData(userId: string) {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     // Get Subscription Plan
@@ -97,7 +98,7 @@ export class ProfileService {
       updateData.avatar = avatarUrl;
       // Delete old image — non-blocking
       if (existing?.avatar) {
-        deleteFromCloudinary(existing.avatar).catch(() => {});
+        deleteFromCloudinary(existing.avatar).catch(() => { });
       }
     }
 
@@ -173,7 +174,8 @@ export class ProfileService {
   }
 
   // SOFT DELETE — clear cache + session + FCM
-  async deleteAccount(userId: string) {    const user = await User.findOneAndUpdate(
+  async deleteAccount(userId: string) {
+    const user = await User.findOneAndUpdate(
       { _id: userId, isDeleted: false },
       {
         isDeleted: true,

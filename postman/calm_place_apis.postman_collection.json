@@ -1,0 +1,138 @@
+{
+	"info": {
+		"name": "MY-EMDR Calm Place CRUD",
+		"description": "APIs for setting up and managing the user's Calm Place (Safe Place) through image, sound, and description.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Save Calm Place (FileUpload - Form Data)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "describe",
+							"value": "This is a quiet beach at sunset where I feel safe.",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": [],
+							"description": "Upload a PNG or JPG file"
+						},
+						{
+							"key": "sound",
+							"type": "file",
+							"src": [],
+							"description": "Upload an MP3 or WAV file"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/calm-place",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"calm-place"
+					]
+				},
+				"description": "Use this request to upload actual media files from your computer."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Save Calm Place (Direct Links - JSON)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"describe\": \"A beautiful mountain range with cool air.\",\n  \"image\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n  \"soundLink\": \"https://res.cloudinary.com/demo/video/upload/sample_audio.mp3\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/calm-place",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"calm-place"
+					]
+				},
+				"description": "Use this request if you already have the Cloudinary links."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get My Calm Place",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/calm-place",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"calm-place"
+					]
+				},
+				"description": "Retrieves the saved calm place data for the current user."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Delete Calm Place",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/calm-place",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"calm-place"
+					]
+				},
+				"description": "Deletes the calm place and its associated media from Cloudinary."
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5005",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "PASTE_YOUR_ACCESS_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

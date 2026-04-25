@@ -14,11 +14,21 @@ const ALLOWED_MIMETYPES: Record<string, string> = {
   'image/png': 'image',
   'image/webp': 'image',
   'image/svg+xml': 'image',
+  'image/gif': 'image',
   'video/mp4': 'video',
   'video/mpeg': 'video',
+  'video/quicktime': 'video',
+  'video/x-msvideo': 'video',
+  'video/webm': 'video',
   'audio/mpeg': 'audio',
   'audio/mp3': 'audio',
   'audio/wav': 'audio',
+  'audio/x-wav': 'audio',
+  'audio/aac': 'audio',
+  'audio/ogg': 'audio',
+  'audio/webm': 'audio',
+  'audio/flac': 'audio',
+  'audio/x-m4a': 'audio',
 };
 
 const uploadToCloudinary = (
@@ -113,6 +123,36 @@ export const categoryService = {
     logger.info('Category and all media deleted', { id });
     return { message: 'Category deleted successfully' };
   },
+
+  async getCategoryMedia(categoryId: string) {
+    const category = await Category.findById(categoryId).lean();
+    if (!category) throw ApiError.notFound('Category not found');
+
+    const mediaList = await Media.find({ categoryId, status: 'active' })
+      .select('name url mediaType duration size createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const images = mediaList.filter(m => m.mediaType === 'image');
+    const videos = mediaList.filter(m => m.mediaType === 'video');
+    const musics = mediaList.filter(m => m.mediaType === 'audio');
+    const others = mediaList.filter(m => !['image', 'video', 'audio'].includes(m.mediaType || ''));
+
+    return {
+      category: {
+        id: category._id,
+        name: category.categoryName,
+        slug: category.slug,
+      },
+      media: {
+        images,
+        videos,
+        musics,
+        others, // To show any files that don't fit the above categories
+      },
+      totalCount: mediaList.length,
+    };
+  },
 };
 
 
@@ -128,13 +168,21 @@ export const mediaService = {
     const category = await Category.findById(categoryId);
     if (!category) throw ApiError.notFound('Category not found');
 
-    const mediaType = (ALLOWED_MIMETYPES[file.mimetype] || 'raw') as any;
+    let mediaType = (ALLOWED_MIMETYPES[file.mimetype] || 'raw') as any;
+
+    // Fallback: Check extension if mimetype is unknown
+    if (mediaType === 'raw') {
+      const ext = file.originalname.split('.').pop()?.toLowerCase();
+      if (['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'].includes(ext!)) mediaType = 'image';
+      else if (['mp4', 'mpeg', 'mov', 'avi', 'webm'].includes(ext!)) mediaType = 'video';
+      else if (['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a'].includes(ext!)) mediaType = 'audio';
+    }
 
     if (file.size > 400 * 1024 * 1024) {
       throw new ApiError(400, 'FILE_TOO_LARGE', 'File size cannot exceed 400MB');
     }
 
-    const resourceType = mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'raw';
+    const resourceType = mediaType === 'image' ? 'image' : mediaType === 'video' || mediaType === 'audio' ? 'video' : 'raw';
     const publicId = `media_${userId}_${Date.now()}`;
 
     const uploaded = await uploadToCloudinary(file.buffer, publicId, resourceType);

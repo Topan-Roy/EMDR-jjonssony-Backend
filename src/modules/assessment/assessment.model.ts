@@ -5,21 +5,24 @@ export type SeverityLevel = 'minimal' | 'mild' | 'moderate' | 'moderately_severe
 export interface IAssessment extends Document {
   userId: mongoose.Types.ObjectId;
 
-  // PHQ-9 answers (0-3 each, 9 questions)
+  // PHQ-9
   phq9Answers: number[];
   phq9Score: number;
   phq9Severity: SeverityLevel;
 
-  // GAD-7 answers (0-3 each, 7 questions)
+  // GAD-7
   gad7Answers: number[];
   gad7Score: number;
   gad7Severity: SeverityLevel;
 
-  // DES-11 answers (0-100 each, 8 questions)
+  // DES-11
   des11Answers: number[];
   des11Score: number;
 
-  // Overall recommendation
+  totalScore: number;
+  currentStep: 'phq9' | 'gad7' | 'des11' | 'completed';
+  isCompleted: boolean;
+
   requiresProfessionalSupport: boolean;
   recommendation: string;
 
@@ -31,16 +34,20 @@ const assessmentSchema = new Schema<IAssessment>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 
-    phq9Answers:   { type: [Number], required: true },
-    phq9Score:     { type: Number, required: true },
+    phq9Answers:   { type: [Number], default: [] },
+    phq9Score:     { type: Number },
     phq9Severity:  { type: String, enum: ['minimal', 'mild', 'moderate', 'moderately_severe', 'severe'] },
 
-    gad7Answers:   { type: [Number], required: true },
-    gad7Score:     { type: Number, required: true },
+    gad7Answers:   { type: [Number], default: [] },
+    gad7Score:     { type: Number },
     gad7Severity:  { type: String, enum: ['minimal', 'mild', 'moderate', 'moderately_severe', 'severe'] },
 
-    des11Answers:  { type: [Number], required: true },
-    des11Score:    { type: Number, required: true },
+    des11Answers:  { type: [Number], default: [] },
+    des11Score:    { type: Number },
+
+    totalScore:    { type: Number },
+    currentStep:   { type: String, enum: ['phq9', 'gad7', 'des11', 'completed'], default: 'phq9' },
+    isCompleted:   { type: Boolean, default: false },
 
     requiresProfessionalSupport: { type: Boolean, default: false },
     recommendation: { type: String },

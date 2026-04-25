@@ -24,6 +24,7 @@ router.get('/categories/:id', validate(idParamSchema), categoryController.getByI
 router.post('/categories', requireAdmin, validate(createCategorySchema), categoryController.create);
 router.put('/categories/:id', requireAdmin, validate(updateCategorySchema), categoryController.update);
 router.delete('/categories/:id', requireAdmin, validate(idParamSchema), categoryController.delete);
+router.get('/categories/:id/media', validate(idParamSchema), categoryController.getCategoryMedia);
 
 router.get('/media', validate(listQuerySchema), mediaController.list);
 router.get('/media/:id', validate(idParamSchema), mediaController.getById);

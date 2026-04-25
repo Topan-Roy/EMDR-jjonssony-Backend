@@ -21,6 +21,7 @@ import bilateralRoutes from '../modules/bilateral/bilateral.routes';
 import progressRoutes from '../modules/progress/progress.routes';
 import sessionProgressRoutes from '../modules/progress/sessionProgress.routes';
 import uploadRoutes from '../modules/upload/upload.routes';
+import calmPlaceRoutes from '../modules/calm-place/calmPlace.routes';
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use('/bilateral', bilateralRoutes);
 router.use('/progress', progressRoutes);
 router.use('/session-progress', sessionProgressRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/calm-place', calmPlaceRoutes);
 
 export default router;

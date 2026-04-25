@@ -26,6 +26,10 @@ export const categoryController = {
     try { ok(res, await categoryService.delete(req.params.id)); }
     catch (e) { next(e); }
   },
+  getCategoryMedia: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { ok(res, await categoryService.getCategoryMedia(req.params.id)); }
+    catch (e) { next(e); }
+  },
 };
 
 export const mediaController = {
