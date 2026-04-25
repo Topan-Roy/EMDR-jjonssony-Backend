@@ -33,7 +33,7 @@ router.use('/terms', termsRoutes);
 router.use('/privacy', privacyRoutes);
 router.use('/faq', faqRoutes);
 router.use('/about', aboutRoutes);
-router.use('/admin/profile', adminRoutes);
+router.use('/admin', adminRoutes);
 router.use('/location', locationRoutes);
 router.use('/chat', chatRoutes);
 router.use('/support', supportRoutes);

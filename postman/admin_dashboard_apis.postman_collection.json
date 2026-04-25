@@ -1,0 +1,109 @@
+{
+	"info": {
+		"name": "MY-EMDR Admin Dashboard & Profile",
+		"description": "APIs for administrator profile management and system overview statistics (Dashboard).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Dashboard Stats",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/dashboard",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"dashboard"
+					]
+				},
+				"description": "Returns the complete statistics for the System Overview dashboard (Users, Subscriptions, MRR, Revenue Trend)."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Admin Profile",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/admin",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin"
+					]
+				},
+				"description": "Retrieves the logged-in administrator's profile data."
+			},
+			"response": []
+		},
+		{
+			"name": "Update Admin Profile",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "Super Admin",
+							"type": "text"
+						},
+						{
+							"key": "phoneNumber",
+							"value": "1234567890",
+							"type": "text"
+						},
+						{
+							"key": "profilePic",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin"
+					]
+				},
+				"description": "Updates the administrator's display name, phone number, and profile picture."
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5005",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "PASTE_ADMIN_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

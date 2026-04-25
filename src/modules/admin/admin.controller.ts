@@ -16,7 +16,13 @@ export const adminController = {
     } catch (e) { next(e); }
   },
 
-  // PATCH /admin/profile  — multipart/form-data
+  getDashboardStats: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      respond(res, await adminService.getDashboardStats());
+    } catch (e) { next(e); }
+  },
+
+  // PATCH /admin/profile — multipart/form-data
   updateProfile: async (req: AuthRequest, res: Response, next: NextFunction) => {
     uploadProfilePic(req as any, res, async (err) => {
       try {
@@ -34,5 +40,38 @@ export const adminController = {
         respond(res, data);
       } catch (e) { next(e); }
     });
+  },
+
+  // GET /admin/users?page=1&limit=10&search=john
+  getAllUsers: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit, search } = req.query;
+      const data = await adminService.getAllUsers(
+        Number(page) || 1,
+        Number(limit) || 10,
+        (search as string) || ''
+      );
+      respond(res, data);
+    } catch (e) { next(e); }
+  },
+
+  // GET /admin/users/:userId
+  getUserDetails: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.params;
+      respond(res, await adminService.getUserDetails(userId));
+    } catch (e) { next(e); }
+  },
+
+  // PATCH /admin/users/:userId/status
+  updateUserStatus: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.params;
+      const { status } = req.body;
+      if (!['active', 'suspended'].includes(status)) {
+        throw ApiError.validationError('Invalid status', 'status');
+      }
+      respond(res, await adminService.updateUserStatus(userId, status));
+    } catch (e) { next(e); }
   },
 };

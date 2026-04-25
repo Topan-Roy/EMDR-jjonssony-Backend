@@ -1,0 +1,129 @@
+{
+	"info": {
+		"name": "MY-EMDR Admin User Management",
+		"description": "APIs for administrators to manage users, view detailed progress, and change account status (Active/Suspended).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. List Users (Table Data)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/users?page=1&limit=10&search=",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"users"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "search",
+							"value": ""
+						}
+					]
+				},
+				"description": "Returns a paginated list of users with their current subscription, roadmap type, and session progress percentage."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get User Details (Modal Data)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/users/:userId",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"users",
+						":userId"
+					],
+					"variable": [
+						{
+							"key": "userId",
+							"value": "PASTE_USER_ID_HERE"
+						}
+					]
+				},
+				"description": "Returns comprehensive details about a single user including total sessions completed and last active time."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Update User Status (Activate/Suspend)",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"status\": \"suspended\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/users/:userId/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"users",
+						":userId",
+						"status"
+					],
+					"variable": [
+						{
+							"key": "userId",
+							"value": "PASTE_USER_ID_HERE"
+						}
+					]
+				},
+				"description": "Allows administrators to switch a user's status between 'active' and 'suspended'."
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5005",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "PASTE_ADMIN_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

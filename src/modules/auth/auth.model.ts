@@ -138,6 +138,12 @@ const userSchema = new Schema<IUser>(
     deletedAt: { type: Date },
     isAcceptPrivacyStatement: { type: Boolean, default: false },
     privacyAcceptedAt: { type: Date },
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+      index: true
+    },
   },
   {
     timestamps: true,
