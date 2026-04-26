@@ -51,7 +51,7 @@ if (env.NODE_ENV !== 'test') {
 // Global rate limit
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests' } },
