@@ -11,7 +11,7 @@ export interface ICalmPlace extends Document {
 
 const calmPlaceSchema = new Schema<ICalmPlace>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     image: { type: String, default: '' },
     soundLink: { type: String, default: '' },
     describe: { type: String, trim: true, default: '' },

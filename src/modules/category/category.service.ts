@@ -44,6 +44,7 @@ const uploadToCloudinary = (
         resource_type: resourceType,
         folder: 'my-emdr/media',
         chunk_size: 6000000,
+        timeout: 600000, // 10 minutes — prevents timeout on large uploads
         ...(resourceType === 'image' && {
           transformation: [
             { quality: 'auto:best', fetch_format: 'auto' },

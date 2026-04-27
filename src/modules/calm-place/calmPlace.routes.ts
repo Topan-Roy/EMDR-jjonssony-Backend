@@ -3,7 +3,7 @@ import multer from 'multer';
 import { calmPlaceController as ctrl } from './calmPlace.controller';
 import { authenticate } from '../../middleware/authMiddleware';
 import { validate } from '../../middleware/validate';
-import { saveCalmPlaceSchema } from './calmPlace.validation';
+import { saveCalmPlaceSchema, idParamSchema } from './calmPlace.validation';
 
 const router = Router();
 const upload = multer({ 
@@ -32,16 +32,16 @@ router.post(
 
 /**
  * @route   GET /api/calm-place
- * @desc    Get user's Calm Place
+ * @desc    Get user's Calm Places
  * @access  Private
  */
 router.get('/', ctrl.get);
 
 /**
- * @route   DELETE /api/calm-place
- * @desc    Delete user's Calm Place
+ * @route   DELETE /api/calm-place/:id
+ * @desc    Delete user's Calm Place by ID
  * @access  Private
  */
-router.delete('/', ctrl.delete);
+router.delete('/:id', validate(idParamSchema), ctrl.delete);
 
 export default router;

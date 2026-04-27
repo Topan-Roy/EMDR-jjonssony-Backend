@@ -56,12 +56,13 @@ export const errorHandler = (
 
   if (err.name === 'MongoServerError' && (err as any).code === 11000) {
     const field = Object.keys((err as any).keyPattern)[0];
+    const isEmail = field === 'email';
     
     res.status(409).json({
       success: false,
       error: {
-        code: 'EMAIL_ALREADY_EXISTS',
-        message: 'Email already registered',
+        code: isEmail ? 'EMAIL_ALREADY_EXISTS' : 'DUPLICATE_KEY_ERROR',
+        message: isEmail ? 'Email already registered' : `Duplicate value for field: ${field}`,
         field,
       },
       meta: {

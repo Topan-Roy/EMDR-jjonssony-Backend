@@ -5,6 +5,7 @@ cloudinary.config({
   api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure:     true,
+  timeout:    600000, // 10 minutes — prevents timeout on large file uploads
 });
 
 export { cloudinary };

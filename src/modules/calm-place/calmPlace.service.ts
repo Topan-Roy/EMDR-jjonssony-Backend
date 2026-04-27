@@ -5,15 +5,13 @@ import { logger } from '../../config/logger';
 
 export class CalmPlaceService {
   /**
-   * Create or Update Calm Place
+   * Create a new Calm Place
    */
   async save(
     userId: string, 
     data: { describe?: string, image?: string, soundLink?: string }, 
     files?: { image?: Express.Multer.File[], sound?: Express.Multer.File[] }
   ) {
-    const existing = await CalmPlace.findOne({ userId });
-    
     let { describe, image, soundLink } = data;
 
     // Handle Image Upload
@@ -24,10 +22,6 @@ export class CalmPlaceService {
         `img_${userId}_${Date.now()}`
       );
       image = uploaded.url;
-      // Delete old image if it was a cloudinary link
-      if (existing?.image && existing.image.includes('cloudinary')) {
-        deleteFromCloudinary(existing.image).catch(() => {});
-      }
     }
 
     // Handle Sound Upload
@@ -38,34 +32,33 @@ export class CalmPlaceService {
         `snd_${userId}_${Date.now()}`
       );
       soundLink = uploaded.url;
-      // Delete old sound if it was a cloudinary link
-      if (existing?.soundLink && existing.soundLink.includes('cloudinary')) {
-        deleteFromCloudinary(existing.soundLink).catch(() => {});
-      }
     }
 
-    const updateData: Record<string, any> = {};
-    if (describe !== undefined) updateData.describe = describe;
-    if (image !== undefined) updateData.image = image;
-    if (soundLink !== undefined) updateData.soundLink = soundLink;
+    // Drop the unique index to allow multiple calm places (temporary fix to update DB)
+    try {
+      await CalmPlace.collection.dropIndex('userId_1');
+    } catch (e) {
+      // Ignore if index doesn't exist
+    }
 
-    const calmPlace = await CalmPlace.findOneAndUpdate(
-      { userId },
-      updateData,
-      { upsert: true, new: true, runValidators: true }
-    );
+    const calmPlace = await CalmPlace.create({
+      userId,
+      describe,
+      image,
+      soundLink
+    });
 
-    logger.info('Calm place saved', { userId, id: calmPlace._id });
+    logger.info('Calm place created', { userId, id: calmPlace._id });
     return calmPlace;
   }
 
   async get(userId: string) {
-    const calmPlace = await CalmPlace.findOne({ userId }).lean();
-    return calmPlace || { userId: userId, describe: '', image: '', soundLink: '' };
+    const calmPlaces = await CalmPlace.find({ userId }).sort({ createdAt: -1 }).lean();
+    return calmPlaces;
   }
 
-  async delete(userId: string) {
-    const calmPlace = await CalmPlace.findOne({ userId });
+  async delete(id: string, userId: string) {
+    const calmPlace = await CalmPlace.findOne({ _id: id, userId });
     if (!calmPlace) throw ApiError.notFound('Calm place not found');
 
     if (calmPlace.image && calmPlace.image.includes('cloudinary')) {
@@ -76,7 +69,7 @@ export class CalmPlaceService {
     }
 
     await calmPlace.deleteOne();
-    logger.info('Calm place deleted', { userId });
+    logger.info('Calm place deleted', { id, userId });
     return { message: 'Calm place deleted successfully' };
   }
 }

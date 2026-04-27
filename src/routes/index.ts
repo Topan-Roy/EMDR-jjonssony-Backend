@@ -23,6 +23,8 @@ import sessionProgressRoutes from '../modules/progress/sessionProgress.routes';
 import watchTimeRoutes from '../modules/progress/watchTime.routes';
 import uploadRoutes from '../modules/upload/upload.routes';
 import calmPlaceRoutes from '../modules/calm-place/calmPlace.routes';
+import exposureRoutes from '../modules/exposure/exposure.routes';
+import cbtFormulationRoutes from '../modules/cbt-formulation/cbtFormulation.routes';
 
 const router = Router();
 
@@ -49,5 +51,7 @@ router.use('/session-progress', sessionProgressRoutes);
 router.use('/watch-time', watchTimeRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/calm-place', calmPlaceRoutes);
+router.use('/exposure', exposureRoutes);
+router.use('/cbt-formulation', cbtFormulationRoutes);
 
 export default router;

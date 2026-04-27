@@ -25,6 +25,10 @@ const startServer = async () => {
       logger.info(`Server running on port ${env.PORT} [${env.NODE_ENV}]`);
     });
 
+    // Increase timeouts for large file uploads (10 minutes)
+    server.timeout = 600000;
+    server.keepAliveTimeout = 620000;
+
     // Graceful shutdown
     const shutdown = async (signal: string) => {
       logger.info(`${signal} received — shutting down gracefully`);

@@ -34,7 +34,10 @@ export class UploadController {
           },
           meta: { timestamp: new Date().toISOString() }
         });
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.message?.includes('Timeout') || error?.message?.includes('ETIMEDOUT') || error?.http_code === 499) {
+          return next(new ApiError(408, 'UPLOAD_TIMEOUT', 'File upload timed out. Please try a smaller file or check your internet connection.'));
+        }
         next(error);
       }
     });

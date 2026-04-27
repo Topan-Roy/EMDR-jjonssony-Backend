@@ -28,7 +28,7 @@ export const calmPlaceController = {
 
   delete: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const result = await calmPlaceService.delete(req.user!.userId);
+      const result = await calmPlaceService.delete(req.params.id, req.user!.userId);
       ok(res, result);
     } catch (e) { next(e); }
   }
