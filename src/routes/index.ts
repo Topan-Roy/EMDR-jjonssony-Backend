@@ -27,6 +27,7 @@ import exposureRoutes from '../modules/exposure/exposure.routes';
 import cbtFormulationRoutes from '../modules/cbt-formulation/cbtFormulation.routes';
 import emdrSessionRoutes from '../modules/emdr-session/emdrSession.routes';
 import myTestsRoutes from '../modules/my-tests/myTests.routes';
+import symptomTrackerRoutes from '../modules/symptom-tracker/symptomTracker.routes';
 
 const router = Router();
 
@@ -57,5 +58,6 @@ router.use('/exposure', exposureRoutes);
 router.use('/cbt-formulation', cbtFormulationRoutes);
 router.use('/emdr-session', emdrSessionRoutes);
 router.use('/my-tests', myTestsRoutes);
+router.use('/symptom-tracker', symptomTrackerRoutes);
 
 export default router;

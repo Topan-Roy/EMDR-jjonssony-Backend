@@ -86,7 +86,9 @@ export interface ITestItem extends Document {
   itemName   : string;
   day        : DayOfWeek;
   description: string | null;
+  image      : string | null;
   isActive   : boolean;
+  isGlobal   : boolean;   // true = admin-created, visible to all users
   createdAt  : Date;
   updatedAt  : Date;
 }
@@ -123,6 +125,15 @@ const testItemSchema = new Schema<ITestItem>(
       trim     : true,
       maxlength: 1000,
       default  : null,
+    },
+    image: {
+      type   : String,
+      default: null,
+    },
+    isGlobal: {
+      type   : Boolean,
+      default: false,
+      index  : true,
     },
     isActive: {
       type   : Boolean,

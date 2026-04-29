@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { myTestsController as ctrl } from './myTests.controller';
-import { authenticate } from '../../middleware/authMiddleware';
+import { authenticate, requireAdmin } from '../../middleware/authMiddleware';
 import { validate } from '../../middleware/validate';
 import {
   createCategorySchema,
@@ -66,11 +66,10 @@ router.get('/categories/:id/stats', validate(categoryIdParamSchema), ctrl.getCat
 
 /**
  * POST /api/my-tests/categories/:categoryId/items
- * Create a new item in a category
- * Body: { itemName: string, day?: DayOfWeek, description?: string }
- * Note: If day is not provided, it will be auto-calculated from creation date
+ * Accepts multipart/form-data (image optional).
+ * Multer runs inside the controller — so NO validate() middleware here.
  */
-router.post('/categories/:categoryId/items', validate(createItemSchema), ctrl.createItem);
+router.post('/categories/:categoryId/items', ctrl.createItem);
 
 /**
  * GET /api/my-tests/categories/:categoryId/items
@@ -94,16 +93,40 @@ router.get('/items/:id', validate(itemIdParamSchema), ctrl.getItem);
 
 /**
  * PATCH /api/my-tests/items/:id
- * Update an item
- * Body: { itemName?: string, day?: DayOfWeek, description?: string, isActive?: boolean }
+ * Accepts multipart/form-data (image optional).
+ * Multer runs inside the controller — so NO validate() middleware here.
  */
-router.patch('/items/:id', validate(updateItemSchema), ctrl.updateItem);
+router.patch('/items/:id', ctrl.updateItem);
 
 /**
  * DELETE /api/my-tests/items/:id
  * Delete an item
  */
 router.delete('/items/:id', validate(itemIdParamSchema), ctrl.deleteItem);
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * PATCH /api/my-tests/admin/items/make-global
+ * Admin — bulk mark existing items as global (one-time migration)
+ * Body: { itemIds: ["id1","id2"] } — or empty body to mark ALL items as global
+ */
+router.patch('/admin/items/make-global', requireAdmin, ctrl.makeItemsGlobal);
+
+/**
+ * GET /api/my-tests/admin/items
+ * Admin — list ALL items across all users (for dashboard/chart)
+ */
+router.get('/admin/items', requireAdmin, ctrl.listAllItemsAdmin);
+
+/**
+ * POST /api/my-tests/admin/categories/:categoryId/items
+ * Admin — create a global item (visible to ALL users)
+ * form-data: itemName, description?, day?, image?
+ */
+router.post('/admin/categories/:categoryId/items', requireAdmin, ctrl.createGlobalItem);
 
 export default router;
 

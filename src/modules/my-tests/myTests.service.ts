@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { TestCategory, TestItem, ITestCategory, ITestItem, DayOfWeek, DAYS_OF_WEEK } from './myTests.model';
 import { ApiError } from '../../utils/ApiError';
 import { logger } from '../../config/logger';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/uploadImage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -19,16 +20,19 @@ interface UpdateCategoryPayload {
 }
 
 interface CreateItemPayload {
-  itemName: string;
-  day?: DayOfWeek;
+  itemName   : string;
+  day       ?: DayOfWeek;
   description?: string | null;
+  imageBuffer?: Buffer;
 }
 
 interface UpdateItemPayload {
-  itemName?: string;
-  day?: DayOfWeek;
+  itemName   ?: string;
+  day        ?: DayOfWeek;
   description?: string | null;
-  isActive?: boolean;
+  isActive   ?: boolean;
+  imageBuffer?: Buffer;
+  removeImage?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,7 +247,19 @@ export const myTestsService = {
       itemName   : payload.itemName,
       day,
       description: payload.description ?? null,
+      image      : null,
     });
+
+    // Upload image to Cloudinary if provided
+    if (payload.imageBuffer) {
+      const imageUrl = await uploadToCloudinary(
+        payload.imageBuffer,
+        'my-emdr/test-items',
+        `item_${item._id}`
+      );
+      item.image = imageUrl;
+      await item.save();
+    }
 
     // Update denormalized item count
     await TestCategory.findByIdAndUpdate(categoryId, { $inc: { itemCount: 1 } });
@@ -317,11 +333,26 @@ export const myTestsService = {
   ): Promise<ITestItem> {
     const item = await findOwnedItem(itemId, userId);
 
-    // Update fields
-    if (payload.itemName !== undefined) item.itemName = payload.itemName;
-    if (payload.day !== undefined) item.day = payload.day;
+    if (payload.itemName    !== undefined) item.itemName    = payload.itemName;
+    if (payload.day         !== undefined) item.day         = payload.day;
     if (payload.description !== undefined) item.description = payload.description;
-    if (payload.isActive !== undefined) item.isActive = payload.isActive;
+    if (payload.isActive    !== undefined) item.isActive    = payload.isActive;
+
+    // Remove image if requested
+    if (payload.removeImage && item.image) {
+      await deleteFromCloudinary(item.image).catch(() => {});
+      item.image = null;
+    }
+
+    // Upload new image if provided
+    if (payload.imageBuffer) {
+      if (item.image) await deleteFromCloudinary(item.image).catch(() => {});
+      item.image = await uploadToCloudinary(
+        payload.imageBuffer,
+        'my-emdr/test-items',
+        `item_${item._id}`
+      );
+    }
 
     await item.save();
 
@@ -345,7 +376,8 @@ export const myTestsService = {
   },
 
   /**
-   * Get all items for a user (across all categories)
+   * Get all items for a user — returns global items (admin-created) visible to all users
+   * plus the user's own items
    */
   async getAllUserItems(
     userId: string,
@@ -353,20 +385,42 @@ export const myTestsService = {
     limit: number = 50,
     day?: DayOfWeek
   ) {
-    const filter: Record<string, unknown> = { userId };
+    // Show global items (admin-created, isGlobal: true) + user's own items
+    // Note: old documents may not have isGlobal field — treat missing as false
+    const filter: Record<string, unknown> = {
+      isActive: true,
+      $or: [
+        { isGlobal: true },
+        { userId: new mongoose.Types.ObjectId(userId) },
+      ],
+    };
     if (day) filter.day = day;
 
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
+    const [rawItems, total] = await Promise.all([
       TestItem.find(filter)
         .populate('categoryId', 'categoryName')
-        .sort({ createdAt: -1 })
+        .sort({ isGlobal: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       TestItem.countDocuments(filter),
     ]);
+
+    const items = rawItems.map((item: any) => ({
+      id         : item._id,
+      itemName   : item.itemName,
+      description: item.description,
+      image      : item.image,
+      day        : item.day,
+      isActive   : item.isActive,
+      isGlobal   : item.isGlobal,
+      category   : item.categoryId
+        ? { id: item.categoryId._id, name: item.categoryId.categoryName }
+        : null,
+      createdAt  : item.createdAt,
+    }));
 
     return {
       items,
@@ -374,7 +428,119 @@ export const myTestsService = {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages : Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+    };
+  },
+
+  /**
+   * Admin — bulk mark existing items as global (one-time migration)
+   * PATCH /api/my-tests/admin/items/make-global
+   * Body: { itemIds: string[] } — or empty body to mark ALL items
+   */
+  async makeItemsGlobal(itemIds?: string[]): Promise<{ updated: number }> {
+    const filter = itemIds?.length
+      ? { _id: { $in: itemIds } }
+      : {};                          // empty = all items
+
+    const result = await TestItem.updateMany(filter, { $set: { isGlobal: true } });
+
+    logger.info('Items marked as global', { updated: result.modifiedCount });
+    return { updated: result.modifiedCount };
+  },
+
+  /**
+   * Admin — create a global item (visible to all users)
+   */
+  async createGlobalItem(
+    adminId    : string,
+    categoryId : string,
+    payload    : CreateItemPayload
+  ): Promise<ITestItem> {
+    validateObjectId(categoryId, 'category ID');
+
+    const category = await TestCategory.findById(categoryId);
+    if (!category) throw ApiError.notFound('Category not found');
+
+    const day: DayOfWeek = payload.day ?? DAYS_OF_WEEK[new Date().getDay()];
+
+    const item = await TestItem.create({
+      userId    : new mongoose.Types.ObjectId(adminId),
+      categoryId: new mongoose.Types.ObjectId(categoryId),
+      itemName  : payload.itemName,
+      day,
+      description: payload.description ?? null,
+      image      : null,
+      isGlobal   : true,
+    });
+
+    if (payload.imageBuffer) {
+      const imageUrl = await uploadToCloudinary(
+        payload.imageBuffer,
+        'my-emdr/test-items',
+        `item_${item._id}`
+      );
+      item.image = imageUrl;
+      await item.save();
+    }
+
+    await TestCategory.findByIdAndUpdate(categoryId, { $inc: { itemCount: 1 } });
+
+    logger.info('Global test item created by admin', {
+      itemId: item._id, adminId, categoryId, itemName: item.itemName,
+    });
+
+    return item;
+  },
+
+  /**
+   * Admin — get all items across ALL users (for dashboard/chart)
+   */
+  async getAllItemsAdmin(
+    page : number = 1,
+    limit: number = 50,
+    day ?: DayOfWeek
+  ) {
+    const filter: Record<string, unknown> = {};
+    if (day) filter.day = day;
+
+    const skip = (page - 1) * limit;
+
+    const [rawItems, total] = await Promise.all([
+      TestItem.find(filter)
+        .populate('categoryId', 'categoryName')
+        .populate('userId', 'firstName lastName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      TestItem.countDocuments(filter),
+    ]);
+
+    const items = rawItems.map((item: any) => ({
+      id         : item._id,
+      itemName   : item.itemName,
+      description: item.description,
+      image      : item.image,
+      day        : item.day,
+      isActive   : item.isActive,
+      category   : item.categoryId
+        ? { id: item.categoryId._id, name: item.categoryId.categoryName }
+        : null,
+      user       : item.userId
+        ? { id: item.userId._id, name: `${item.userId.firstName} ${item.userId.lastName}`, email: item.userId.email }
+        : null,
+      createdAt  : item.createdAt,
+    }));
+
+    return {
+      items,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages : Math.ceil(total / limit),
         hasNextPage: page * limit < total,
       },
     };
