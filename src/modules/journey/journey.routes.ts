@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { journeyController as ctrl } from './journey.controller';
-import { authenticate, requireAdmin } from '../../middleware/authMiddleware';
+import { authenticate } from '../../middleware/authMiddleware';
 import { validate } from '../../middleware/validate';
 import { createJourneySchema, updateJourneySchema, idParamSchema } from './journey.validation';
 

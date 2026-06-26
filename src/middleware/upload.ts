@@ -28,12 +28,6 @@ export const uploadChatImage = imageUploader.fields([
 ]);
 
 // General Media Uploader (Image, Video, Audio)
-const MEDIA_ALLOWED_TYPES = [
-  ...ALLOWED_TYPES,
-  'video/mp4', 'video/webm', 'video/quicktime',
-  'audio/mpeg', 'audio/wav', 'audio/webm', 'audio/ogg'
-];
-
 const mediaUploader = multer({
   storage,
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit

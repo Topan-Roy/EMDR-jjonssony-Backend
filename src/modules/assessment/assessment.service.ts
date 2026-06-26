@@ -61,7 +61,7 @@ export const assessmentService = {
        throw ApiError.validationError('Your assessment score indicates a high risk level. Please consult a professional.');
     }
 
-    const assessment = await Assessment.findOneAndUpdate(
+    await Assessment.findOneAndUpdate(
       { userId, isCompleted: false },
       { phq9Answers, phq9Score, phq9Severity, currentStep: 'gad7' },
       { upsert: true, new: true }

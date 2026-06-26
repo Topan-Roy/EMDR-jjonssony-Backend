@@ -107,7 +107,7 @@ export const myTestsService = {
     const category = await TestCategory.create({
       userId: new mongoose.Types.ObjectId(userId),
       categoryName: payload.categoryName,
-      description: payload.description || null,
+      description: payload.description ?? undefined,
     });
 
     logger.info('Test category created', {
@@ -191,7 +191,7 @@ export const myTestsService = {
 
     // Update fields
     if (payload.categoryName !== undefined) category.categoryName = payload.categoryName;
-    if (payload.description !== undefined) category.description = payload.description;
+    if (payload.description !== undefined) category.description = payload.description ?? undefined;
     if (payload.isActive !== undefined) category.isActive = payload.isActive;
 
     await category.save();

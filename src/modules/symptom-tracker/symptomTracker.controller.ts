@@ -92,13 +92,13 @@ export const symptomTrackerController = {
     } catch (e) { next(e); }
   },
 
-  adminListSubmissions: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  adminListSubmissions: async (_req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       res.status(501).json({ success: false, message: "Not Implemented" });
     } catch (e) { next(e); }
   },
 
-  adminStats: async (req: AuthRequest, res: Response, next: NextFunction) => {
+  adminStats: async (_req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       res.status(501).json({ success: false, message: "Not Implemented" });
     } catch (e) { next(e); }

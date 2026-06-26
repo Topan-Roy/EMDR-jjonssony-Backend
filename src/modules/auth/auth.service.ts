@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { User, IUser } from './auth.model';
 import { ApiError } from '../../utils/ApiError';
 import { generateOTP, getOTPExpiry, hashOTP, verifyOTP, isOTPExpired } from '../../utils/otp';

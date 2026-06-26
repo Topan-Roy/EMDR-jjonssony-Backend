@@ -1,17 +1,11 @@
 import { User } from '../auth/auth.model';
-import { UserSubscription, SubscriptionPlan, SubscriptionStatus } from '../subscriptions/subscription.model';
+import { UserSubscription, SubscriptionStatus } from '../subscriptions/subscription.model';
 import { Journey } from '../journey/journey.model';
 import { SessionProgress } from '../progress/sessionProgress.model';
 import { WatchTime } from '../progress/watchTime.model';
 import { Payment } from '../payment/payment.model';
 import { ApiError } from '../../utils/ApiError';
-import { redis } from '../../config/redis';
-import { logger } from '../../config/logger';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/uploadImage';
-import mongoose from 'mongoose';
-
-const CACHE_KEY = (id: string) => `admin:profile:${id}`;
-const CACHE_TTL = 300; // 5 minutes
 
 export const adminService = {
 

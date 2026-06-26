@@ -25,6 +25,10 @@ export class ApiError extends Error {
     return new ApiError(400, 'VALIDATION_ERROR', message, field);
   }
 
+  static badRequest(message: string, field?: string): ApiError {
+    return new ApiError(400, 'BAD_REQUEST', message, field);
+  }
+
   static emailAlreadyExists(): ApiError {
     return new ApiError(409, 'EMAIL_ALREADY_EXISTS', 'Email already registered', 'email');
   }

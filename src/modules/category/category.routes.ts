@@ -8,8 +8,6 @@ import {
   createMediaSchema, updateMediaSchema,
   idParamSchema, listQuerySchema,
 } from './category.validation';
-import { ApiError } from '../../utils/ApiError';
-
 const router = Router();
 
 const upload = multer({
