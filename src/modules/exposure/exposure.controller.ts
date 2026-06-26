@@ -55,4 +55,25 @@ export const exposureController = {
       ok(res, await exposureService.deletePlan(req.params.id, req.user!.userId));
     } catch (e) { next(e); }
   },
+
+  /* 6️⃣  GET /api/exposure/plan/:id/weekly-review */
+  getWeeklyReview: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await exposureService.getWeeklyReview(req.params.id, req.user!.userId));
+    } catch (e) { next(e); }
+  },
+
+  /* 7️⃣  GET /api/exposure/plan/:id/weekly-review/history */
+  getWeeklyReviewHistory: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await exposureService.getWeeklyReviewHistory(req.params.id, req.user!.userId));
+    } catch (e) { next(e); }
+  },
+
+  /* 8️⃣  POST /api/exposure/plan/:id/weekly-review */
+  saveWeeklyReview: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await exposureService.saveWeeklyReview(req.params.id, req.user!.userId, req.body));
+    } catch (e) { next(e); }
+  },
 };

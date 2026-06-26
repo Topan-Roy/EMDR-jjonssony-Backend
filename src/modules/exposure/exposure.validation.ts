@@ -36,3 +36,22 @@ export const updateStepSchema = z.object({
 export const idParamSchema = z.object({
   params: z.object({ id: objectId }),
 });
+
+/* ── Weekly Review ────────────────────────────────────────── */
+const stepReviewInput = z.object({
+  stepIndex: z.number().int().min(0),
+  status: z.enum(['completed', 'in-progress', 'not-started']),
+  sudsRating: z.number().min(0).max(10).optional().nullable(),
+  problemType: z.string().optional().nullable(),
+  plannedDay: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+export const weeklyReviewSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    weekNumber: z.number().int().min(1),
+    overallFeeling: z.string().optional().nullable(),
+    stepReviews: z.array(stepReviewInput).default([]),
+  }),
+});

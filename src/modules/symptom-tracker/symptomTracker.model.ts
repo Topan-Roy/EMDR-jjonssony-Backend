@@ -103,7 +103,6 @@ const symptomTrackerConfigSchema = new Schema<ISymptomTrackerConfig>(
   { timestamps: true }
 );
 
-symptomTrackerConfigSchema.index({ trackerType: 1 });
 symptomTrackerConfigSchema.index({ isActive: 1, createdAt: -1 });
 
 export const SymptomTrackerConfig = mongoose.model<ISymptomTrackerConfig>(

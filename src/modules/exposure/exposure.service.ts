@@ -1,4 +1,5 @@
 import { ExposurePlan } from './exposure.model';
+import { ExposureWeeklyReview } from './exposureReview.model';
 import { ApiError } from '../../utils/ApiError';
 import { logger } from '../../config/logger';
 
@@ -140,7 +141,65 @@ export const exposureService = {
     if (plan.userId.toString() !== userId) throw ApiError.forbidden('Access denied');
 
     await ExposurePlan.findByIdAndDelete(planId);
+    await ExposureWeeklyReview.deleteMany({ planId });
     logger.info('Exposure plan deleted', { planId, userId });
     return { message: 'Exposure plan deleted successfully' };
+  },
+
+  /* ─── 8. GET Weekly Review ──────────────────────────────── */
+  async getWeeklyReview(planId: string, userId: string) {
+    const plan = await ExposurePlan.findById(planId).lean();
+    if (!plan) throw ApiError.notFound('Exposure plan not found');
+    if (plan.userId.toString() !== userId) throw ApiError.forbidden('Access denied');
+
+    const review = await ExposureWeeklyReview.findOne({
+      planId,
+      weekNumber: plan.currentWeek,
+    }).lean();
+
+    return { plan, review };
+  },
+
+  /* ─── 9. GET Weekly Review History ──────────────────────── */
+  async getWeeklyReviewHistory(planId: string, userId: string) {
+    const plan = await ExposurePlan.findById(planId).lean();
+    if (!plan) throw ApiError.notFound('Exposure plan not found');
+    if (plan.userId.toString() !== userId) throw ApiError.forbidden('Access denied');
+
+    const reviews = await ExposureWeeklyReview.find({ planId })
+      .sort({ weekNumber: 1 })
+      .lean();
+
+    return reviews;
+  },
+
+  /* ─── 10. SAVE Weekly Review ────────────────────────────── */
+  async saveWeeklyReview(
+    planId: string,
+    userId: string,
+    data: { weekNumber: number; overallFeeling?: string; stepReviews: any[] }
+  ) {
+    const plan = await ExposurePlan.findById(planId);
+    if (!plan) throw ApiError.notFound('Exposure plan not found');
+    if (plan.userId.toString() !== userId) throw ApiError.forbidden('Access denied');
+
+    const review = await ExposureWeeklyReview.findOneAndUpdate(
+      { planId, weekNumber: data.weekNumber },
+      {
+        userId,
+        overallFeeling: data.overallFeeling,
+        stepReviews: data.stepReviews,
+      },
+      { new: true, upsert: true }
+    );
+    
+    // Optionally advance the currentWeek if this review is for the currentWeek
+    if (plan.currentWeek === data.weekNumber) {
+      plan.currentWeek += 1;
+      await plan.save();
+    }
+
+    logger.info('Exposure weekly review saved', { planId, weekNumber: data.weekNumber });
+    return review;
   },
 };
